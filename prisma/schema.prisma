@@ -24,15 +24,30 @@ enum AuthProvider {
 enum CertificateStatus {
   DRAFT
   GENERATED
+  PENDING_APPROVAL
   UPLOADED_IPFS
   MINTED
   REVOKED
+  EXPIRED
+}
+
+enum CertificateTemplate {
+  CLASSIC
+  MODERN
+  ELEGANT
+}
+
+enum ApprovalStatus {
+  PENDING
+  APPROVED
+  REJECTED
 }
 
 enum TransactionType {
   MINT
   TRANSFER
   REVOKE
+  RENEW
 }
 
 enum TransactionStatus {
@@ -150,6 +165,12 @@ model Certificate {
   issueDate        DateTime          @default(now())
   description      String?
   status           CertificateStatus @default(DRAFT)
+  template         CertificateTemplate @default(CLASSIC)
+  approvalStatus   ApprovalStatus    @default(APPROVED)
+  expiresAt        DateTime?
+  approvedAt       DateTime?
+  approvedById     String?
+  rejectionReason  String?
   pdfUrl           String?
   pdfIpfsHash      String?
   metadataIpfsHash String?
@@ -177,6 +198,8 @@ model Certificate {
   @@index([tokenId])
   @@index([transactionHash])
   @@index([status])
+  @@index([approvalStatus])
+  @@index([expiresAt])
   @@map("certificates")
 }
 

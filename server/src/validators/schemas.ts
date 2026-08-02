@@ -95,11 +95,38 @@ export const certificateSchema = z.object({
   issueDate: z.coerce.date().optional(),
   description: z.string().max(1000).optional().nullable(),
   universityId: z.string().cuid().optional(),
+  template: z.enum(['CLASSIC', 'MODERN', 'ELEGANT']).optional(),
+  expiresAt: z.coerce.date().optional().nullable(),
+  requiresApproval: z.coerce.boolean().optional(),
 });
 
 export const mintSchema = z.object({
   certificateId: z.string().cuid(),
   walletAddress: z.string().regex(/^0x[a-fA-F0-9]{40}$/),
+});
+
+export const bulkMintSchema = z.object({
+  items: z
+    .array(
+      z.object({
+        certificateId: z.string().cuid(),
+        walletAddress: z.string().regex(/^0x[a-fA-F0-9]{40}$/),
+      })
+    )
+    .min(1)
+    .max(50),
+});
+
+export const renewSchema = z.object({
+  expiresAt: z.coerce.date(),
+});
+
+export const rejectSchema = z.object({
+  reason: z.string().min(3).max(500),
+});
+
+export const templateSchema = z.object({
+  template: z.enum(['CLASSIC', 'MODERN', 'ELEGANT']),
 });
 
 export const revokeSchema = z.object({

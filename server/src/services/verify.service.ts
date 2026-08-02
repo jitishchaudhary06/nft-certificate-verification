@@ -10,7 +10,14 @@ const formatCertificate = (certificate: Awaited<ReturnType<typeof prisma.certifi
 } | null) => {
   if (!certificate) return null;
 
-  const verified = certificate.status === CertificateStatus.MINTED && !certificate.isRevoked;
+  const expired =
+    certificate.status === CertificateStatus.EXPIRED ||
+    Boolean(
+      (certificate as { expiresAt?: Date | null }).expiresAt &&
+        (certificate as { expiresAt?: Date | null }).expiresAt!.getTime() < Date.now()
+    );
+  const verified =
+    certificate.status === CertificateStatus.MINTED && !certificate.isRevoked && !expired;
 
   return {
     id: certificate.id,
@@ -21,7 +28,15 @@ const formatCertificate = (certificate: Awaited<ReturnType<typeof prisma.certifi
     issueDate: certificate.issueDate,
     status: certificate.status,
     verified,
-    verificationBadge: verified ? 'Verified ✅' : certificate.isRevoked ? 'Revoked ❌' : 'Not Minted',
+    verificationBadge: certificate.isRevoked
+      ? 'Revoked ❌'
+      : expired
+        ? 'Expired ⏰'
+        : verified
+          ? 'Verified ✅'
+          : certificate.status === CertificateStatus.PENDING_APPROVAL
+            ? 'Pending approval'
+            : 'Not Minted',
     studentName: certificate.student
       ? `${certificate.student.firstName} ${certificate.student.lastName}`
       : null,
@@ -48,6 +63,9 @@ const formatCertificate = (certificate: Awaited<ReturnType<typeof prisma.certifi
     mintDate: certificate.status === CertificateStatus.MINTED ? certificate.updatedAt : null,
     isRevoked: certificate.isRevoked,
     revokeReason: certificate.revokeReason,
+    template: (certificate as { template?: string }).template || 'CLASSIC',
+    approvalStatus: (certificate as { approvalStatus?: string }).approvalStatus || 'APPROVED',
+    expiresAt: (certificate as { expiresAt?: Date | null }).expiresAt || null,
   };
 };
 
@@ -173,11 +191,15 @@ export const getStudentNfts = async (userId: string) => {
   });
 
   return {
+    studentProfileId: student.id,
+    studentPublicId: student.studentId,
+    portfolioUrl: `${env.clientUrl}/portfolio/${student.studentId}`,
     data: certificates.map((c) => ({
       ...formatCertificate(c),
       shareLink: c.tokenId
         ? `${env.clientUrl}/verify/${c.tokenId}`
         : `${env.clientUrl}/verify/certificate/${c.id}`,
+      explorerUrl: c.transactionHash ? getExplorerUrl(c.transactionHash) : null,
     })),
   };
 };

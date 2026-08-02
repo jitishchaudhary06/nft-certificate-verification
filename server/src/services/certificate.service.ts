@@ -1,5 +1,12 @@
 import path from 'path';
-import { CertificateStatus, RoleName, TransactionStatus, TransactionType } from '@prisma/client';
+import {
+  ApprovalStatus,
+  CertificateStatus,
+  CertificateTemplate,
+  RoleName,
+  TransactionStatus,
+  TransactionType,
+} from '@prisma/client';
 import prisma from '../config/database';
 import { AppError } from '../middleware/errorHandler';
 import { generateCertificateNumber } from '../utils/crypto';
@@ -37,6 +44,9 @@ export const createCertificate = async (
     issueDate?: Date;
     description?: string | null;
     universityId?: string;
+    template?: CertificateTemplate;
+    expiresAt?: Date | null;
+    requiresApproval?: boolean;
   },
   actor: JwtPayload,
   uploadedPdfPath?: string
@@ -51,6 +61,8 @@ export const createCertificate = async (
   assertAccess(actor, universityId);
 
   const certificateNumber = generateCertificateNumber();
+  const template = data.template || CertificateTemplate.CLASSIC;
+  const requiresApproval = Boolean(data.requiresApproval);
 
   let certificate = await prisma.certificate.create({
     data: {
@@ -62,10 +74,19 @@ export const createCertificate = async (
       description: data.description,
       studentId: student.id,
       universityId,
-      status: uploadedPdfPath ? CertificateStatus.GENERATED : CertificateStatus.DRAFT,
+      template,
+      expiresAt: data.expiresAt || null,
+      approvalStatus: requiresApproval ? ApprovalStatus.PENDING : ApprovalStatus.APPROVED,
+      status: requiresApproval
+        ? CertificateStatus.PENDING_APPROVAL
+        : uploadedPdfPath
+          ? CertificateStatus.GENERATED
+          : CertificateStatus.DRAFT,
       pdfUrl: uploadedPdfPath
         ? `/uploads/certificates/${path.basename(uploadedPdfPath)}`
         : null,
+      approvedAt: requiresApproval ? null : new Date(),
+      approvedById: requiresApproval ? null : actor.userId,
     },
     include: { student: true, university: true },
   });
@@ -92,6 +113,8 @@ export const createCertificate = async (
         title: certificate.title,
         issueDate: certificate.issueDate,
         logoPath: logoAbs,
+        template: certificate.template,
+        expiresAt: certificate.expiresAt,
       },
       qr.filePath
     );
@@ -100,7 +123,9 @@ export const createCertificate = async (
       where: { id: certificate.id },
       data: {
         pdfUrl: pdf.url,
-        status: CertificateStatus.GENERATED,
+        status: requiresApproval
+          ? CertificateStatus.PENDING_APPROVAL
+          : CertificateStatus.GENERATED,
       },
       include: { student: true, university: true },
     });
@@ -140,6 +165,8 @@ export const regeneratePdf = async (id: string, actor: JwtPayload) => {
       issueDate: certificate.issueDate,
       logoPath: logoAbs,
       tokenId: certificate.tokenId,
+      template: certificate.template,
+      expiresAt: certificate.expiresAt,
     },
     qr.filePath
   );
@@ -225,6 +252,16 @@ export const mintCertificate = async (
     throw new AppError('Certificate already minted', 400);
   }
   if (certificate.isRevoked) throw new AppError('Cannot mint a revoked certificate', 400);
+  if (certificate.approvalStatus !== ApprovalStatus.APPROVED) {
+    throw new AppError('Certificate must be approved before minting', 400);
+  }
+  if (certificate.expiresAt && certificate.expiresAt.getTime() < Date.now()) {
+    await prisma.certificate.update({
+      where: { id: certificate.id },
+      data: { status: CertificateStatus.EXPIRED },
+    });
+    throw new AppError('Certificate has expired. Renew it before minting', 400);
+  }
 
   if (!certificate.metadataUrl) {
     certificate = await uploadToIpfs(certificateId, actor);
@@ -249,9 +286,9 @@ export const mintCertificate = async (
       toAddress: walletAddress.toLowerCase(),
       tokenId: mintResult.tokenId,
       blockNumber: BigInt(mintResult.blockNumber || 0),
-      network: 'polygon-amoy',
+      network: env.blockchain.chainId === 137 ? 'polygon' : 'polygon-amoy',
       certificateId: certificate.id,
-      metadata: { mocked: mintResult.mocked },
+      metadata: { mocked: mintResult.mocked, chainId: env.blockchain.chainId },
     },
   });
 
@@ -321,6 +358,13 @@ export const revokeCertificate = async (id: string, reason: string, actor: JwtPa
     },
     include: { student: true, university: true },
   });
+
+  const revokeMail = emailTemplates.certificateRevoked(
+    `${updated.student.firstName} ${updated.student.lastName}`,
+    updated.course,
+    reason
+  );
+  await enqueueEmail({ to: updated.student.email, ...revokeMail });
 
   await logActivity({
     userId: actor.userId,

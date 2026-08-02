@@ -15,7 +15,20 @@ export interface CertificatePdfData {
   issueDate: Date;
   logoPath?: string | null;
   tokenId?: string | null;
+  template?: 'CLASSIC' | 'MODERN' | 'ELEGANT' | string | null;
+  expiresAt?: Date | null;
 }
+
+const templateTheme = (template?: string | null) => {
+  switch (template) {
+    case 'MODERN':
+      return { bg: '#0f172a', accent: '#14b8a6', text: '#f8fafc', muted: '#94a3b8', line: '#14b8a6' };
+    case 'ELEGANT':
+      return { bg: '#fffbeb', accent: '#92400e', text: '#1c1917', muted: '#78716c', line: '#b45309' };
+    default:
+      return { bg: '#f8fafc', accent: '#0f766e', text: '#0f172a', muted: '#64748b', line: '#0f766e' };
+  }
+};
 
 export const generateQrCode = async (
   certificateId: string,
@@ -48,19 +61,20 @@ export const generateCertificatePdf = async (
     const doc = new PDFDocument({ size: 'A4', layout: 'landscape', margin: 40 });
     const stream = fs.createWriteStream(filePath);
     doc.pipe(stream);
+    const theme = templateTheme(data.template);
 
     // Background
-    doc.rect(0, 0, doc.page.width, doc.page.height).fill('#f8fafc');
+    doc.rect(0, 0, doc.page.width, doc.page.height).fill(theme.bg);
 
     // Border
     doc
-      .strokeColor('#0f766e')
+      .strokeColor(theme.accent)
       .lineWidth(3)
       .rect(20, 20, doc.page.width - 40, doc.page.height - 40)
       .stroke();
 
     doc
-      .strokeColor('#94a3b8')
+      .strokeColor(theme.muted)
       .lineWidth(1)
       .rect(30, 30, doc.page.width - 60, doc.page.height - 60)
       .stroke();
@@ -75,7 +89,7 @@ export const generateCertificatePdf = async (
     }
 
     doc
-      .fillColor('#0f766e')
+      .fillColor(theme.accent)
       .fontSize(14)
       .font('Helvetica-Bold')
       .text(data.universityName.toUpperCase(), 50, data.logoPath ? 140 : 60, {
@@ -83,7 +97,7 @@ export const generateCertificatePdf = async (
       });
 
     doc
-      .fillColor('#0f172a')
+      .fillColor(theme.text)
       .fontSize(28)
       .font('Helvetica-Bold')
       .text('CERTIFICATE OF ACHIEVEMENT', 50, data.logoPath ? 165 : 90, {
@@ -91,18 +105,18 @@ export const generateCertificatePdf = async (
       });
 
     doc
-      .fillColor('#64748b')
+      .fillColor(theme.muted)
       .fontSize(12)
       .font('Helvetica')
       .text(data.title, 50, data.logoPath ? 205 : 130, { align: 'center' });
 
     doc
-      .fillColor('#64748b')
+      .fillColor(theme.muted)
       .fontSize(12)
       .text('This is to certify that', 50, 250, { align: 'center' });
 
     doc
-      .fillColor('#0f172a')
+      .fillColor(theme.text)
       .fontSize(26)
       .font('Helvetica-Bold')
       .text(data.studentName, 50, 275, { align: 'center' });
@@ -110,24 +124,24 @@ export const generateCertificatePdf = async (
     doc
       .moveTo(doc.page.width / 2 - 150, 310)
       .lineTo(doc.page.width / 2 + 150, 310)
-      .strokeColor('#0f766e')
+      .strokeColor(theme.line)
       .stroke();
 
     doc
-      .fillColor('#334155')
+      .fillColor(theme.text)
       .fontSize(14)
       .font('Helvetica')
       .text(`has successfully completed the course`, 50, 325, { align: 'center' });
 
     doc
-      .fillColor('#0f766e')
+      .fillColor(theme.accent)
       .fontSize(18)
       .font('Helvetica-Bold')
       .text(data.course, 50, 350, { align: 'center' });
 
     if (data.grade) {
       doc
-        .fillColor('#334155')
+        .fillColor(theme.text)
         .fontSize(13)
         .font('Helvetica')
         .text(`Grade: ${data.grade}`, 50, 380, { align: 'center' });
@@ -140,7 +154,7 @@ export const generateCertificatePdf = async (
     });
 
     doc
-      .fillColor('#64748b')
+      .fillColor(theme.muted)
       .fontSize(11)
       .text(`Issued on ${issueDateStr}`, 60, 430);
 
@@ -150,10 +164,29 @@ export const generateCertificatePdf = async (
       doc.text(`NFT Token ID: ${data.tokenId}`, 60, 470);
     }
 
+    if (data.expiresAt) {
+      doc.text(
+        `Valid until: ${data.expiresAt.toLocaleDateString('en-US', {
+          year: 'numeric',
+          month: 'long',
+          day: 'numeric',
+        })}`,
+        60,
+        data.tokenId ? 490 : 470
+      );
+    }
+
+    if (data.template) {
+      doc
+        .fillColor(theme.muted)
+        .fontSize(9)
+        .text(`Template: ${data.template}`, 60, 515);
+    }
+
     if (qrPath && fs.existsSync(qrPath)) {
       doc.image(qrPath, doc.page.width - 150, 410, { width: 90, height: 90 });
       doc
-        .fillColor('#64748b')
+        .fillColor(theme.muted)
         .fontSize(8)
         .text('Scan to verify', doc.page.width - 150, 505, { width: 90, align: 'center' });
     }

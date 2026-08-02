@@ -8,8 +8,11 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge, Card, CardContent, CardHeader, CardTitle, Label } from "@/components/ui/card";
 import { assetUrl, formatDate, shortenAddress } from "@/lib/utils";
+import { QrScanner } from "@/components/qr-scanner";
+import { useRouter } from "next/navigation";
 
 export default function EmployerVerifyPage() {
+  const router = useRouter();
   const [filters, setFilters] = useState({
     q: "",
     tokenId: "",
@@ -42,6 +45,31 @@ export default function EmployerVerifyPage() {
             Search by QR / Token ID, transaction hash, wallet, or student name
           </p>
         </div>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Scan QR code</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <QrScanner
+              onResult={(text) => {
+                try {
+                  const url = new URL(text);
+                  const parts = url.pathname.split("/").filter(Boolean);
+                  const maybeToken = parts[parts.length - 1];
+                  if (maybeToken) {
+                    router.push(`/verify/${maybeToken}`);
+                    return;
+                  }
+                } catch {
+                  // plain token id
+                }
+                setFilters((f) => ({ ...f, tokenId: text, q: text }));
+                setSubmitted((f) => ({ ...f, tokenId: text, q: text }));
+              }}
+            />
+          </CardContent>
+        </Card>
 
         <Card>
           <CardHeader>

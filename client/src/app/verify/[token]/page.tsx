@@ -48,6 +48,11 @@ export default function VerifyTokenPage() {
                 <Info label="Course" value={data.course} />
                 <Info label="Grade" value={data.grade || "—"} />
                 <Info label="Issue Date" value={data.issueDate ? formatDate(data.issueDate) : "—"} />
+                <Info
+                  label="Expires"
+                  value={data.expiresAt ? formatDate(data.expiresAt) : "No expiry"}
+                />
+                <Info label="Approval" value={data.approvalStatus || "APPROVED"} />
                 <Info label="Token ID" value={data.tokenId || token} />
                 <Info
                   label="Wallet Address"
@@ -88,6 +93,20 @@ export default function VerifyTokenPage() {
                     </a>
                   </Button>
                 )}
+                {data.shareLink || data.tokenId ? (
+                  <Button
+                    variant="outline"
+                    onClick={() => {
+                      const link = `${window.location.origin}/verify/${data.tokenId || token}`;
+                      window.open(
+                        `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(link)}`,
+                        "_blank"
+                      );
+                    }}
+                  >
+                    Share LinkedIn
+                  </Button>
+                ) : null}
               </div>
 
               {data.qrCodeUrl && (

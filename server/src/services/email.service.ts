@@ -78,4 +78,15 @@ export const emailTemplates = {
       </div>
     `,
   }),
+  certificateRevoked: (name: string, course: string, reason: string) => ({
+    subject: `Certificate update for ${course}`,
+    html: `
+      <div style="font-family:Arial,sans-serif;max-width:560px;margin:0 auto">
+        <h2>Hello, ${name}</h2>
+        <p>Your certificate for <strong>${course}</strong> has been revoked.</p>
+        <p><strong>Reason:</strong> ${reason}</p>
+        <p style="color:#666;font-size:12px">If you believe this is a mistake, contact your university admin.</p>
+      </div>
+    `,
+  }),
 };

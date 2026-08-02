@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useQuery } from "@tanstack/react-query";
 import { BrowserProvider } from "ethers";
 import { toast } from "sonner";
@@ -9,6 +10,7 @@ import { Badge, Card, CardContent, CardHeader, CardTitle } from "@/components/ui
 import { api } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
 import { assetUrl, formatDate } from "@/lib/utils";
+import { downloadCertificatePng } from "@/lib/certificate-png";
 
 export default function StudentDashboardPage() {
   const { user, metamaskLogin, refreshProfile } = useAuth();
@@ -26,21 +28,28 @@ export default function StudentDashboardPage() {
             <h1 className="font-display text-3xl font-semibold">My NFT Certificates</h1>
             <p className="text-slate-500">Download, share, and view on-chain credentials</p>
           </div>
-          <Button
-            variant="outline"
-            onClick={async () => {
-              try {
-                await metamaskLogin();
-                await refreshProfile();
-                toast.success("Wallet connected");
-                refetch();
-              } catch (err) {
-                toast.error((err as Error).message);
-              }
-            }}
-          >
-            {user?.wallet ? `Connected ${user.wallet.address.slice(0, 8)}…` : "Connect Wallet"}
-          </Button>
+          <div className="flex flex-wrap gap-2">
+            {data?.studentPublicId && (
+              <Button asChild variant="secondary">
+                <Link href={`/portfolio/${data.studentPublicId}`}>Public portfolio</Link>
+              </Button>
+            )}
+            <Button
+              variant="outline"
+              onClick={async () => {
+                try {
+                  await metamaskLogin();
+                  await refreshProfile();
+                  toast.success("Wallet connected");
+                  refetch();
+                } catch (err) {
+                  toast.error((err as Error).message);
+                }
+              }}
+            >
+              {user?.wallet ? `Connected ${user.wallet.address.slice(0, 8)}…` : "Connect Wallet"}
+            </Button>
+          </div>
         </div>
 
         {isLoading && <p>Loading…</p>}
@@ -61,6 +70,8 @@ export default function StudentDashboardPage() {
               tokenId?: string;
               issueDate: string;
               university?: string;
+              grade?: string;
+              studentName?: string;
             }) => (
               <Card key={cert.id}>
                 <CardHeader>
@@ -82,6 +93,28 @@ export default function StudentDashboardPage() {
                       </a>
                     </Button>
                   )}
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={async () => {
+                      try {
+                        await downloadCertificatePng({
+                          title: cert.title,
+                          studentName: cert.studentName || user?.name || "Student",
+                          course: cert.course,
+                          university: cert.university || "University",
+                          grade: cert.grade,
+                          issueDate: formatDate(cert.issueDate),
+                          tokenId: cert.tokenId,
+                        });
+                        toast.success("PNG downloaded");
+                      } catch (err) {
+                        toast.error((err as Error).message);
+                      }
+                    }}
+                  >
+                    Download PNG
+                  </Button>
                   {cert.ipfsUrl && (
                     <Button asChild size="sm" variant="outline">
                       <a href={cert.ipfsUrl} target="_blank" rel="noreferrer">
@@ -100,15 +133,31 @@ export default function StudentDashboardPage() {
                     <Button
                       size="sm"
                       onClick={async () => {
-                        await navigator.clipboard.writeText(
-                          cert.shareLink!.startsWith("http")
-                            ? cert.shareLink!
-                            : `${window.location.origin}${cert.shareLink}`
-                        );
+                        const link = cert.shareLink!.startsWith("http")
+                          ? cert.shareLink!
+                          : `${window.location.origin}${cert.shareLink}`;
+                        await navigator.clipboard.writeText(link);
                         toast.success("Verification link copied");
                       }}
                     >
                       Share Link
+                    </Button>
+                  )}
+                  {cert.shareLink && (
+                    <Button
+                      size="sm"
+                      variant="secondary"
+                      onClick={() => {
+                        const link = cert.shareLink!.startsWith("http")
+                          ? cert.shareLink!
+                          : `${window.location.origin}${cert.shareLink}`;
+                        window.open(
+                          `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(link)}`,
+                          "_blank"
+                        );
+                      }}
+                    >
+                      LinkedIn
                     </Button>
                   )}
                   {cert.tokenId && (
