@@ -1,0 +1,237 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+enum RoleName {
+  SUPER_ADMIN
+  UNIVERSITY_ADMIN
+  STUDENT
+  EMPLOYER
+}
+
+enum AuthProvider {
+  EMAIL
+  GOOGLE
+  METAMASK
+}
+
+enum CertificateStatus {
+  DRAFT
+  GENERATED
+  UPLOADED_IPFS
+  MINTED
+  REVOKED
+}
+
+enum TransactionType {
+  MINT
+  TRANSFER
+  REVOKE
+}
+
+enum TransactionStatus {
+  PENDING
+  CONFIRMED
+  FAILED
+}
+
+model Role {
+  id          String       @id @default(cuid())
+  name        RoleName     @unique
+  description String?
+  permissions Permission[]
+  users       User[]
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+
+  @@map("roles")
+}
+
+model Permission {
+  id          String   @id @default(cuid())
+  name        String   @unique
+  description String?
+  roles       Role[]
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("permissions")
+}
+
+model User {
+  id                String       @id @default(cuid())
+  email             String       @unique
+  passwordHash      String?
+  name              String
+  avatarUrl         String?
+  provider          AuthProvider @default(EMAIL)
+  googleId          String?      @unique
+  isEmailVerified   Boolean      @default(false)
+  emailVerifyToken  String?
+  resetPasswordToken String?
+  resetPasswordExpires DateTime?
+  refreshToken      String?
+  isActive          Boolean      @default(true)
+  roleId            String
+  role              Role         @relation(fields: [roleId], references: [id])
+  universityId      String?
+  university        University?  @relation("UniversityAdmins", fields: [universityId], references: [id])
+  studentProfile    Student?
+  wallet            Wallet?
+  activityLogs      ActivityLog[]
+  createdAt         DateTime     @default(now())
+  updatedAt         DateTime     @updatedAt
+
+  @@index([email])
+  @@index([roleId])
+  @@index([universityId])
+  @@map("users")
+}
+
+model University {
+  id          String        @id @default(cuid())
+  name        String
+  code        String        @unique
+  email       String?
+  website     String?
+  address     String?
+  logoUrl     String?
+  isActive    Boolean       @default(true)
+  admins      User[]        @relation("UniversityAdmins")
+  students    Student[]
+  certificates Certificate[]
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+
+  @@index([name])
+  @@index([code])
+  @@map("universities")
+}
+
+model Student {
+  id             String        @id @default(cuid())
+  studentId      String
+  firstName      String
+  lastName       String
+  email          String        @unique
+  phone          String?
+  course         String?
+  department     String?
+  enrollmentYear Int?
+  graduationYear Int?
+  universityId   String
+  university     University    @relation(fields: [universityId], references: [id], onDelete: Cascade)
+  userId         String?       @unique
+  user           User?         @relation(fields: [userId], references: [id])
+  certificates   Certificate[]
+  isActive       Boolean       @default(true)
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+
+  @@unique([studentId, universityId])
+  @@index([email])
+  @@index([universityId])
+  @@index([firstName, lastName])
+  @@map("students")
+}
+
+model Certificate {
+  id               String            @id @default(cuid())
+  certificateNumber String           @unique
+  title            String
+  course           String
+  grade            String?
+  issueDate        DateTime          @default(now())
+  description      String?
+  status           CertificateStatus @default(DRAFT)
+  pdfUrl           String?
+  pdfIpfsHash      String?
+  metadataIpfsHash String?
+  metadataUrl      String?
+  nftImageUrl      String?
+  qrCodeUrl        String?
+  tokenId          String?
+  contractAddress  String?
+  transactionHash  String?
+  walletAddress    String?
+  isRevoked        Boolean           @default(false)
+  revokedAt        DateTime?
+  revokeReason     String?
+  studentId        String
+  student          Student           @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  universityId     String
+  university       University        @relation(fields: [universityId], references: [id])
+  transactions     Transaction[]
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
+
+  @@index([certificateNumber])
+  @@index([studentId])
+  @@index([universityId])
+  @@index([tokenId])
+  @@index([transactionHash])
+  @@index([status])
+  @@map("certificates")
+}
+
+model Wallet {
+  id            String   @id @default(cuid())
+  address       String   @unique
+  chainId       Int      @default(80002)
+  isPrimary     Boolean  @default(true)
+  nonce         String?
+  userId        String   @unique
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@index([address])
+  @@map("wallets")
+}
+
+model Transaction {
+  id              String            @id @default(cuid())
+  txHash          String            @unique
+  type            TransactionType
+  status          TransactionStatus @default(PENDING)
+  fromAddress     String?
+  toAddress       String?
+  tokenId         String?
+  blockNumber     BigInt?
+  gasUsed         String?
+  network         String            @default("polygon-amoy")
+  certificateId   String?
+  certificate     Certificate?      @relation(fields: [certificateId], references: [id])
+  metadata        Json?
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
+
+  @@index([txHash])
+  @@index([certificateId])
+  @@index([type])
+  @@map("transactions")
+}
+
+model ActivityLog {
+  id        String   @id @default(cuid())
+  action    String
+  entity    String?
+  entityId  String?
+  details   Json?
+  ipAddress String?
+  userAgent String?
+  userId    String?
+  user      User?    @relation(fields: [userId], references: [id])
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+  @@index([action])
+  @@index([createdAt])
+  @@map("activity_logs")
+}

@@ -1,0 +1,45 @@
+{
+  "name": "nft-certificate-generator",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Production-ready NFT Certificate Generator platform",
+  "workspaces": [
+    "client",
+    "server",
+    "contracts"
+  ],
+  "scripts": {
+    "dev:client": "npm run dev --workspace=client",
+    "dev:server": "npm run dev --workspace=server",
+    "dev": "concurrently \"npm run dev:server\" \"npm run dev:client\"",
+    "build:client": "npm run build --workspace=client",
+    "build:server": "npm run build --workspace=server",
+    "build": "npm run build:server && npm run build:client",
+    "test": "npm run test --workspace=server && npm run test --workspace=contracts",
+    "prisma:generate": "prisma generate --schema=./prisma/schema.prisma",
+    "prisma:migrate": "prisma migrate dev --schema=./prisma/schema.prisma",
+    "prisma:deploy": "prisma migrate deploy --schema=./prisma/schema.prisma",
+    "prisma:studio": "prisma studio --schema=./prisma/schema.prisma",
+    "prisma:seed": "tsx prisma/seed.ts",
+    "compile:contracts": "npm run compile --workspace=contracts",
+    "deploy:contracts": "npm run deploy --workspace=contracts",
+    "lint": "npm run lint --workspace=client && npm run lint --workspace=server"
+  },
+  "prisma": {
+    "schema": "prisma/schema.prisma",
+    "seed": "tsx prisma/seed.ts"
+  },
+  "dependencies": {
+    "@prisma/client": "^6.5.0",
+    "bcryptjs": "^3.0.2"
+  },
+  "devDependencies": {
+    "concurrently": "^9.1.2",
+    "prisma": "^6.5.0",
+    "tsx": "^4.19.3",
+    "typescript": "^5.8.2"
+  },
+  "engines": {
+    "node": ">=20.0.0"
+  }
+}
