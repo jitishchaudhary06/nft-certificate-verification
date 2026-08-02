@@ -23,6 +23,8 @@
     "prisma:seed": "tsx prisma/seed.ts",
     "compile:contracts": "npm run compile --workspace=contracts",
     "deploy:contracts": "npm run deploy --workspace=contracts",
+    "build:api": "prisma generate --schema=./prisma/schema.prisma && npm run build --workspace=server",
+    "start:api": "prisma migrate deploy --schema=./prisma/schema.prisma && npm run start --workspace=server",
     "lint": "npm run lint --workspace=client && npm run lint --workspace=server"
   },
   "prisma": {
@@ -31,11 +33,11 @@
   },
   "dependencies": {
     "@prisma/client": "^6.5.0",
-    "bcryptjs": "^3.0.2"
+    "bcryptjs": "^3.0.2",
+    "prisma": "^6.5.0"
   },
   "devDependencies": {
     "concurrently": "^9.1.2",
-    "prisma": "^6.5.0",
     "tsx": "^4.19.3",
     "typescript": "^5.8.2"
   },
