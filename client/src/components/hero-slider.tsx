@@ -8,12 +8,12 @@ const slides = [
     alt: "Graduates celebrating on campus",
   },
   {
-    src: "https://images.unsplash.com/photo-1541339907198-e08756dedf3f?auto=format&fit=crop&w=1400&q=80",
-    alt: "University students walking on campus",
+    src: "https://images.unsplash.com/photo-1523240795612-9a054b0db644?auto=format&fit=crop&w=1400&q=80",
+    alt: "Students collaborating on campus",
   },
   {
-    src: "https://images.unsplash.com/photo-1523580494863-6f3031224c24?auto=format&fit=crop&w=1400&q=80",
-    alt: "Graduation caps thrown in celebration",
+    src: "https://images.unsplash.com/photo-1492538368677-f6e0afe31dcc?auto=format&fit=crop&w=1400&q=80",
+    alt: "University lecture hall",
   },
 ];
 
