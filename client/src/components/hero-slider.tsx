@@ -4,16 +4,16 @@ import { useEffect, useState } from "react";
 
 const slides = [
   {
-    src: "https://images.unsplash.com/photo-1523050854058-8df90110c9f1?auto=format&fit=crop&w=1400&q=80",
-    alt: "Graduation ceremony on campus",
+    src: "https://images.unsplash.com/photo-1627556704302-624286467c65?auto=format&fit=crop&w=1400&q=80",
+    alt: "Graduates celebrating on campus",
   },
   {
     src: "https://images.unsplash.com/photo-1541339907198-e08756dedf3f?auto=format&fit=crop&w=1400&q=80",
     alt: "University students walking on campus",
   },
   {
-    src: "https://images.unsplash.com/photo-1627556704290-2b1f5853ff78?auto=format&fit=crop&w=1400&q=80",
-    alt: "Academic diploma and credentials",
+    src: "https://images.unsplash.com/photo-1523580494863-6f3031224c24?auto=format&fit=crop&w=1400&q=80",
+    alt: "Graduation caps thrown in celebration",
   },
 ];
 
