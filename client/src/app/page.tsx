@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
+import { HeroSlider } from "@/components/hero-slider";
 
 const steps = [
   {
@@ -40,17 +41,17 @@ const audiences = [
 export default function HomePage() {
   return (
     <div className="min-h-screen bg-[var(--background)] text-[var(--foreground)]">
-      {/* HERO — one composition */}
+      {/* HERO — text left, image slider right */}
       <section className="relative min-h-screen overflow-hidden">
         <div className="absolute inset-0">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
-            src="https://images.unsplash.com/photo-1523050854058-8df90110c9f1?auto=format&fit=crop&w=2400&q=80"
-            alt="University graduation ceremony"
+            src="https://images.unsplash.com/photo-1562774053-701939374585?auto=format&fit=crop&w=2400&q=80"
+            alt=""
             className="hero-media h-full w-full object-cover"
           />
-          <div className="absolute inset-0 bg-[linear-gradient(115deg,rgba(11,79,74,0.94)_0%,rgba(15,23,42,0.72)_55%,rgba(11,18,32,0.55)_100%)]" />
-          <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_20%_20%,rgba(20,184,166,0.22),transparent_50%)]" />
+          <div className="absolute inset-0 bg-[linear-gradient(105deg,rgba(11,79,74,0.96)_0%,rgba(15,23,42,0.88)_48%,rgba(11,18,32,0.78)_100%)]" />
+          <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_15%_20%,rgba(20,184,166,0.2),transparent_45%)]" />
         </div>
 
         <header className="relative z-10 mx-auto flex max-w-6xl items-center justify-between px-6 py-6">
@@ -67,29 +68,35 @@ export default function HomePage() {
           </nav>
         </header>
 
-        <div className="relative z-10 mx-auto flex min-h-[calc(100vh-88px)] max-w-6xl flex-col justify-center px-6 pb-24 pt-10">
-          <p className="animate-fade-up font-display text-4xl font-semibold tracking-tight text-white sm:text-5xl md:text-6xl lg:text-7xl">
-            CertChain
-          </p>
-          <h1 className="animate-fade-up-delay mt-4 max-w-3xl font-display text-3xl font-medium leading-tight text-teal-50 sm:text-4xl md:text-5xl">
-            Academic credentials that live on-chain
-          </h1>
-          <p className="animate-fade-up-delay-2 mt-5 max-w-xl text-base text-teal-50/85 sm:text-lg">
-            Universities issue tamper-proof NFT certificates. Students own them. Employers verify
-            instantly.
-          </p>
-          <div className="animate-fade-up-delay-2 mt-8 flex flex-wrap gap-3">
-            <Button asChild size="lg" className="bg-white text-teal-950 hover:bg-teal-50">
-              <Link href="/register">Get started</Link>
-            </Button>
-            <Button
-              asChild
-              size="lg"
-              variant="outline"
-              className="border-white/35 bg-transparent text-white hover:bg-white/10"
-            >
-              <Link href="/verify">Verify a certificate</Link>
-            </Button>
+        <div className="relative z-10 mx-auto grid min-h-[calc(100vh-88px)] max-w-6xl items-center gap-10 px-6 pb-16 pt-6 lg:grid-cols-[1.05fr_0.95fr] lg:gap-14 lg:pb-20">
+          <div>
+            <p className="animate-fade-up font-display text-4xl font-semibold tracking-tight text-white sm:text-5xl md:text-6xl">
+              CertChain
+            </p>
+            <h1 className="animate-fade-up-delay mt-4 max-w-xl font-display text-3xl font-medium leading-tight text-teal-50 sm:text-4xl md:text-[2.75rem]">
+              Academic credentials that live on-chain
+            </h1>
+            <p className="animate-fade-up-delay-2 mt-5 max-w-lg text-base text-teal-50/85 sm:text-lg">
+              Universities issue tamper-proof NFT certificates. Students own them. Employers verify
+              instantly.
+            </p>
+            <div className="animate-fade-up-delay-2 mt-8 flex flex-wrap gap-3">
+              <Button asChild size="lg" className="bg-white text-teal-950 hover:bg-teal-50">
+                <Link href="/register">Get started</Link>
+              </Button>
+              <Button
+                asChild
+                size="lg"
+                variant="outline"
+                className="border-white/35 bg-transparent text-white hover:bg-white/10"
+              >
+                <Link href="/verify">Verify a certificate</Link>
+              </Button>
+            </div>
+          </div>
+
+          <div className="animate-fade-up-delay w-full justify-self-center lg:justify-self-end">
+            <HeroSlider />
           </div>
         </div>
       </section>
