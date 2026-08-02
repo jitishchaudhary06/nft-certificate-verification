@@ -30,11 +30,11 @@ app.use(
         return;
       }
       const normalized = origin.replace(/\/$/, '');
-      if (env.allowedOrigins.includes(normalized)) {
-        callback(null, true);
-        return;
-      }
-      callback(new Error(`CORS blocked for origin: ${origin}`));
+      const allowed =
+        env.allowedOrigins.includes(normalized) ||
+        /\.onrender\.com$/i.test(new URL(normalized).hostname);
+
+      callback(null, allowed);
     },
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
