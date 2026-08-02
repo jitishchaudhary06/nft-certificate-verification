@@ -8,12 +8,12 @@ const slides = [
     alt: "Graduates celebrating on campus",
   },
   {
-    src: "https://images.unsplash.com/photo-1523240795612-9a054b0db644?auto=format&fit=crop&w=1400&q=80",
-    alt: "Students collaborating on campus",
+    src: "https://images.unsplash.com/photo-1541339907198-e08756dedf3f?auto=format&fit=crop&w=1400&q=80",
+    alt: "University students walking on campus",
   },
   {
-    src: "https://images.unsplash.com/photo-1492538368677-f6e0afe31dcc?auto=format&fit=crop&w=1400&q=80",
-    alt: "University lecture hall",
+    src: "https://images.unsplash.com/photo-1627556704290-2b1f5853ff78?auto=format&fit=crop&w=1400&q=80",
+    alt: "Academic diploma and credentials",
   },
 ];
 
