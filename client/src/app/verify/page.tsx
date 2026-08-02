@@ -20,11 +20,26 @@ export default function EmployerVerifyPage() {
     walletAddress: "",
     studentName: "",
   });
-  const [submitted, setSubmitted] = useState(filters);
+  const [submitted, setSubmitted] = useState<typeof filters | null>(null);
 
-  const { data, isFetching, refetch } = useQuery({
+  const hasSearch = Boolean(
+    submitted &&
+      (submitted.q.trim() ||
+        submitted.tokenId.trim() ||
+        submitted.txHash.trim() ||
+        submitted.walletAddress.trim() ||
+        submitted.studentName.trim())
+  );
+
+  const { data, isFetching } = useQuery({
     queryKey: ["employer-search", submitted],
-    queryFn: async () => (await api.get("/verify", { params: submitted })).data.data,
+    queryFn: async () => {
+      const params = Object.fromEntries(
+        Object.entries(submitted!).filter(([, v]) => String(v).trim().length > 0)
+      );
+      return (await api.get("/verify", { params })).data.data;
+    },
+    enabled: hasSearch,
   });
 
   return (
@@ -65,7 +80,13 @@ export default function EmployerVerifyPage() {
                   // plain token id
                 }
                 setFilters((f) => ({ ...f, tokenId: text, q: text }));
-                setSubmitted((f) => ({ ...f, tokenId: text, q: text }));
+                setSubmitted({
+                  q: text,
+                  tokenId: text,
+                  txHash: "",
+                  walletAddress: "",
+                  studentName: "",
+                });
               }}
             />
           </CardContent>
@@ -90,15 +111,15 @@ export default function EmployerVerifyPage() {
                 <Input
                   value={filters[key]}
                   onChange={(e) => setFilters({ ...filters, [key]: e.target.value })}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") setSubmitted({ ...filters });
+                  }}
                 />
               </div>
             ))}
             <Button
               className="md:col-span-2"
-              onClick={() => {
-                setSubmitted({ ...filters });
-                refetch();
-              }}
+              onClick={() => setSubmitted({ ...filters })}
             >
               {isFetching ? "Searching…" : "Search"}
             </Button>
@@ -113,6 +134,7 @@ export default function EmployerVerifyPage() {
               studentName?: string;
               university?: string;
               course?: string;
+              status?: string;
               verified?: boolean;
               verificationBadge?: string;
               issuer?: string;
@@ -140,6 +162,9 @@ export default function EmployerVerifyPage() {
                       <span className="text-slate-500">Course:</span> {item.course}
                     </p>
                     <p>
+                      <span className="text-slate-500">Status:</span> {item.status || "—"}
+                    </p>
+                    <p>
                       <span className="text-slate-500">Owner:</span>{" "}
                       {item.owner ? shortenAddress(item.owner) : "—"}
                     </p>
@@ -149,9 +174,17 @@ export default function EmployerVerifyPage() {
                     </p>
                   </div>
                   <div className="flex flex-wrap gap-2">
-                    {item.tokenId && (
+                    {(item.tokenId || item.id) && (
                       <Button asChild size="sm">
-                        <Link href={`/verify/${item.tokenId}`}>Open verification</Link>
+                        <Link
+                          href={
+                            item.tokenId
+                              ? `/verify/${item.tokenId}`
+                              : `/verify/certificate/${item.id}`
+                          }
+                        >
+                          Open verification
+                        </Link>
                       </Button>
                     )}
                     {item.pdfUrl && (
@@ -173,8 +206,11 @@ export default function EmployerVerifyPage() {
               </Card>
             )
           )}
-          {!isFetching && !(data?.data || []).length && (
-            <p className="text-slate-500">No results yet. Enter a search term above.</p>
+          {!hasSearch && (
+            <p className="text-slate-500">Enter a search term above and click Search.</p>
+          )}
+          {hasSearch && !isFetching && !(data?.data || []).length && (
+            <p className="text-slate-500">No certificates matched your search.</p>
           )}
         </div>
       </main>

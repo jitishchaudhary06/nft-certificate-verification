@@ -126,32 +126,46 @@ export const employerSearch = async (params: {
     return { data: [formatCertificate(certificate)] };
   }
 
-  const hasCriteria = Boolean(params.walletAddress || params.studentName || params.q);
+  const walletAddress = params.walletAddress?.trim();
+  const studentName = params.studentName?.trim();
+  const q = params.q?.trim();
+  const hasCriteria = Boolean(walletAddress || studentName || q);
   if (!hasCriteria) {
     return { data: [] };
   }
 
-  const where: Record<string, unknown> = {
-    status: CertificateStatus.MINTED,
-  };
+  const andFilters: Record<string, unknown>[] = [];
 
-  if (params.walletAddress) {
-    where.walletAddress = params.walletAddress.toLowerCase();
+  // Wallet ownership only exists after mint
+  if (walletAddress) {
+    andFilters.push({
+      walletAddress: walletAddress.toLowerCase(),
+      status: CertificateStatus.MINTED,
+    });
   }
 
-  if (params.studentName || params.q) {
-    const term = params.studentName || params.q!;
-    where.OR = [
-      { student: { firstName: { contains: term, mode: 'insensitive' } } },
-      { student: { lastName: { contains: term, mode: 'insensitive' } } },
-      { certificateNumber: { contains: term, mode: 'insensitive' } },
-      { tokenId: { contains: term, mode: 'insensitive' } },
-      { transactionHash: { contains: term, mode: 'insensitive' } },
-    ];
+  if (studentName || q) {
+    const term = (studentName || q)!;
+    const parts = term.split(/\s+/).filter(Boolean);
+    const nameOr = parts.flatMap((part) => [
+      { student: { firstName: { contains: part, mode: 'insensitive' as const } } },
+      { student: { lastName: { contains: part, mode: 'insensitive' as const } } },
+    ]);
+
+    andFilters.push({
+      OR: [
+        ...nameOr,
+        { certificateNumber: { contains: term, mode: 'insensitive' } },
+        { title: { contains: term, mode: 'insensitive' } },
+        { course: { contains: term, mode: 'insensitive' } },
+        { tokenId: { contains: term, mode: 'insensitive' } },
+        { transactionHash: { contains: term, mode: 'insensitive' } },
+      ],
+    });
   }
 
   const certificates = await prisma.certificate.findMany({
-    where,
+    where: { AND: andFilters },
     take: 20,
     orderBy: { updatedAt: 'desc' },
     include: {
