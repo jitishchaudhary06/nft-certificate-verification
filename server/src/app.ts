@@ -23,8 +23,22 @@ app.use(
 
 app.use(
   cors({
-    origin: [env.clientUrl, 'http://localhost:3000'],
+    origin: (origin, callback) => {
+      // Allow non-browser / same-origin requests (no Origin header)
+      if (!origin) {
+        callback(null, true);
+        return;
+      }
+      const normalized = origin.replace(/\/$/, '');
+      if (env.allowedOrigins.includes(normalized)) {
+        callback(null, true);
+        return;
+      }
+      callback(new Error(`CORS blocked for origin: ${origin}`));
+    },
     credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization'],
   })
 );
 

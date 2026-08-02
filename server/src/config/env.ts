@@ -17,6 +17,14 @@ export const env = {
   port: parseInt(process.env.PORT || '5000', 10),
   clientUrl: process.env.CLIENT_URL || 'http://localhost:3000',
   apiUrl: process.env.API_URL || 'http://localhost:5000',
+  allowedOrigins: [
+    process.env.CLIENT_URL || 'http://localhost:3000',
+    'http://localhost:3000',
+    ...(process.env.ALLOWED_ORIGINS || '')
+      .split(',')
+      .map((o) => o.trim())
+      .filter(Boolean),
+  ].map((o) => o.replace(/\/$/, '')),
   databaseUrl: process.env.DATABASE_URL || '',
   jwt: {
     accessSecret: required('JWT_ACCESS_SECRET', 'dev-access-secret-change-in-production-32'),
